@@ -23,7 +23,7 @@ import { resendEmailProvider } from '../../../utils/resendEmailProvider.emailer.
 export const addVisit = async (req, res) => {
   try {
     const { patientId } = req.params;
-    const { body, userId } = req;
+    const { body, user_id, clinic_id, user_role } = req;
 
     const { error, value } = addVisitSchema.validate(body, {
       abortEarly: false,
@@ -40,7 +40,19 @@ export const addVisit = async (req, res) => {
       );
     }
 
-    const visitId = await insertVisit(patientId, value, userId);
+    let doctor_id = null;
+    if (user_role === 'doctor') {
+      doctor_id = user_id;
+    } else if (user_role != 'doctor' && value.doctor_id) {
+      doctor_id = value.doctor_id;
+    } else {
+      return res.status(400).json({
+        status: "error",
+        message: "Doctor ID is required when creating a patient as staff",
+      });
+    }
+
+    const visitId = await insertVisit(patientId, value, doctor_id, clinic_id);
 
     return sendSuccessResponse(res, 201, "Visit added successfully", {
       visit_id: visitId,
@@ -50,10 +62,11 @@ export const addVisit = async (req, res) => {
     return sendErrorResponse(res, err, process.env.NODE_ENV);
   }
 };
+
 export const editVisit = async (req, res) => {
   try {
     const { visitId, patientId } = req.params;
-    const { body, userId } = req;
+    const { body, clinic_id } = req;
 
     const { error, value: validatedValue } = updateVisitSchema.validate(body, {
       abortEarly: false,
@@ -71,7 +84,8 @@ export const editVisit = async (req, res) => {
 
     const existingPatient = await findExistingPatientWithVisitId(
       visitId,
-      patientId
+      patientId,
+      clinic_id
     );
 
     if (!existingPatient) {
@@ -83,8 +97,7 @@ export const editVisit = async (req, res) => {
 
     const updatedPatientVisit = await updatePatientVisit(
       visitId,
-      validatedValue,
-      userId
+      validatedValue
     );
 
     return sendSuccessResponse(
@@ -101,9 +114,8 @@ export const editVisit = async (req, res) => {
 export const getVisitById = async (req, res) => {
   try {
     const { patientId, visitId } = req.params;
-    const { userId } = req;
 
-    const visit = await fetchVisitById(visitId, patientId, userId);
+    const visit = await fetchVisitById(visitId, patientId);
 
     if (!visit) {
       return res.status(404).json({
@@ -126,21 +138,25 @@ export const getVisitById = async (req, res) => {
 };
 
 export const getPatientVisits = async (req, res) => {
-    try {
-        const { patientId } = req.params;
-        const { userId } = req;
+  try {
+    const { patientId } = req.params;
+    const { user_id, clinic_id, user_role } = req;
 
-        const patientVisits = await fetchVisitsByPatientId(patientId, userId);
+    const patientVisits = await fetchVisitsByPatientId(patientId, user_role, user_id, clinic_id);
 
-        if (!patientVisits) {
-            return sendErrorResponse(res, 500, "Something went wrong.");
-        }
-
-        return sendSuccessResponse(res, 200, "Patient visits retrieved successfully", patientVisits);
-    } catch (err) {
-        const errorMessage = mapDbError(err);
-        return sendErrorResponse(res, 500, errorMessage, process.env.NODE_ENV === "development" ? err.message : undefined);
+    if (!patientVisits) {
+      return sendErrorResponse(res, 500, "Something went wrong.");
     }
+
+    return sendSuccessResponse(res, 200, "Patient visits retrieved successfully", patientVisits);
+  } catch (err) {
+    return sendErrorResponse(
+      res,
+      500,
+      "Internal Server Error",
+      process.env.NODE_ENV === "development" ? err.message : undefined
+    );
+  }
 };
 
 export const sendEmail = async (req, res) => {
@@ -178,7 +194,6 @@ export const sendEmail = async (req, res) => {
         return sendSuccessResponse(res, 200, "Email sent successfully", resp);
     } catch(err) {
         console.log(err)
-        // const errorMessage = mapDbError(err);
         return sendErrorResponse(res, 500, err.message, process.env.NODE_ENV === "development" ? err.message : undefined);
     }
 }

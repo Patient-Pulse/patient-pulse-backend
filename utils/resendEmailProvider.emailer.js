@@ -1,177 +1,435 @@
 import { Resend } from "resend";
 
-const data = {
-    patient_id: "123456",
-    visit_date: "2025-03-31",
-    weight: "70",
-    blood_pressure: "120/80",
-    heart_rate: "72",
-    temperature: "36.6",
-    blood_sugar: "90",
-    symptoms: "Mild fever, headache",
-    diagnosis: "Viral infection",
-    medications_prescribed: "Paracetamol, Cough Syrup",
-    treatment_plan: "Rest, hydration, and prescribed medication",
-    notes: "Follow-up in 7 days",
-    from: "team@patientpulse.tech",
-    to: "maheshmorem1787@gmail.com",
-};
+// const data = {
+//     patient_id: "123456",
+//     visit_date: "2025-03-31",
+//     weight: "70",
+//     blood_pressure: "120/80",
+//     heart_rate: "72",
+//     temperature: "36.6",
+//     blood_sugar: "90",
+//     symptoms: "Mild fever, headache",
+//     diagnosis: "Viral infection",
+//     medications_prescribed: "Paracetamol, Cough Syrup",
+//     treatment_plan: "Rest, hydration, and prescribed medication",
+//     notes: "Follow-up in 7 days",
+//     from: "team@patientpulse.tech",
+//     to: "maheshmorem1787@gmail.com",
+// };
 
-export const resendEmailProvider = async () => {
+export const resendEmailProvider = async (data) => {
     const resendApiKey = process.env.RESEND_API_KEY;
     
     const resend = new Resend(resendApiKey);
 
     const emailTemplate = `
     <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Patient Visit Report</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-            body {
-                font-family: 'Arial', sans-serif;
-                background-color: #f0f4f8;
-                color: #333;
-                line-height: 1.6;
-            }
-            .container {
-                width: 100%;
-                max-width: 600px;
-                margin: 30px auto;
-                background: #ffffff;
-                border-radius: 12px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                padding: 40px;
-            }
-            .header {
-                text-align: center;
-                font-size: 28px;
-                font-weight: bold;
-                color: #333;
-                padding-bottom: 20px;
-                border-bottom: 2px solid #ddd;
-                margin-bottom: 20px;
-            }
-            .section {
-                display: flex;
-                justify-content: space-between;
-                margin: 20px 0;
-                padding: 12px;
-                background: #f9f9f9;
-                border-radius: 8px;
-                transition: all 0.3s ease;
-            }
-            .section:hover {
-                background: #e6f7ff;
-            }
-            .section h3 {
-                color: #4b8bf9;
-                font-size: 16px;
-                font-weight: bold;
-                flex: 0 0 40%;
-            }
-            .section p {
-                color: #555;
-                font-size: 14px;
-                flex: 0 0 55%;
-                word-wrap: break-word;
-            }
-            .footer {
-                text-align: center;
-                font-size: 12px;
-                color: #aaa;
-                margin-top: 30px;
-                border-top: 1px solid #ddd;
-                padding-top: 20px;
-            }
-            .footer a {
-                color: #4b8bf9;
-                text-decoration: none;
-            }
-            @media (max-width: 600px) {
-                .container {
-                    padding: 25px;
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Your Health Summary</title>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                /* Base styles */
+                body {
+                    font-family: 'Poppins', Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #4a5568;
+                    background-color: #f7fafc;
+                    margin: 0;
+                    padding: 0;
                 }
+                
+                .email-container {
+                    max-width: 640px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+                }
+                
                 .header {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    padding: 40px 30px;
+                    text-align: center;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .header::before {
+                    content: "";
+                    position: absolute;
+                    top: -50px;
+                    right: -50px;
+                    width: 200px;
+                    height: 200px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 50%;
+                }
+                
+                .header::after {
+                    content: "";
+                    position: absolute;
+                    bottom: -80px;
+                    left: -80px;
+                    width: 250px;
+                    height: 250px;
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 50%;
+                }
+                
+                .logo {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
                     font-size: 24px;
+                    font-weight: 700;
+                    margin-bottom: 15px;
+                    z-index: 2;
+                    position: relative;
                 }
+                
+                .header h1 {
+                    margin: 0;
+                    font-size: 28px;
+                    font-weight: 600;
+                    z-index: 2;
+                    position: relative;
+                }
+                
+                .header p {
+                    opacity: 0.9;
+                    font-weight: 300;
+                    margin-top: 10px;
+                    z-index: 2;
+                    position: relative;
+                }
+                
+                .content {
+                    padding: 40px;
+                }
+                
+                .patient-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 20px;
+                    background: #f8fafc;
+                    padding: 20px;
+                    border-radius: 12px;
+                    margin-bottom: 30px;
+                }
+                
+                .patient-avatar {
+                    width: 80px;
+                    height: 80px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 3px solid #e2e8f0;
+                }
+                
+                .patient-details h3 {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                }
+                
+                .patient-details p {
+                    margin: 5px 0 0;
+                    color: #718096;
+                    font-size: 14px;
+                }
+                
                 .section {
-                    flex-direction: column;
-                    align-items: flex-start;
+                    margin-bottom: 30px;
                 }
-                .section h3 {
+                
+                .section-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: #2d3748;
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #edf2f7;
+                }
+                
+                .section-title img {
+                    width: 24px;
+                    height: 24px;
+                }
+                
+                .info-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 15px;
+                }
+                
+                .info-item {
+                    background: #f8fafc;
+                    padding: 18px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+                
+                .info-icon {
+                    width: 24px;
+                    height: 24px;
+                    flex-shrink: 0;
+                }
+                
+                .info-content {
+                    flex: 1;
+                }
+                
+                .info-label {
+                    font-size: 13px;
+                    color: #718096;
                     margin-bottom: 5px;
                 }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">Patient Visit Report</div>
+                
+                .info-value {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #2d3748;
+                }
+                
+                .full-width {
+                    grid-column: span 2;
+                }
+                
+                .diagnosis-card {
+                    background: #fff5f5;
+                    border-left: 4px solid #fc8181;
+                    padding: 18px;
+                    border-radius: 8px;
+                    margin-top: 15px;
+                }
+                
+                .medication-card {
+                    background: #ebf8ff;
+                    border-left: 4px solid #63b3ed;
+                    padding: 18px;
+                    border-radius: 8px;
+                    margin-top: 15px;
+                }
+                
+                .treatment-card {
+                    background: #f0fff4;
+                    border-left: 4px solid #68d391;
+                    padding: 18px;
+                    border-radius: 8px;
+                    margin-top: 15px;
+                }
+                
+                .card-title {
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                
+                .card-title img {
+                    width: 18px;
+                    height: 18px;
+                }
+                
+                .footer {
+                    background: #2d3748;
+                    padding: 30px;
+                    text-align: center;
+                    font-size: 12px;
+                    color: #a0aec0;
+                }
+                
+                .footer-links {
+                    display: flex;
+                    justify-content: center;
+                    gap: 20px;
+                    margin-bottom: 20px;
+                }
+                
+                .footer-links a {
+                    color: #e2e8f0;
+                    text-decoration: none;
+                    font-size: 14px;
+                }
+                
+                .social-icons {
+                    display: flex;
+                    justify-content: center;
+                    gap: 15px;
+                    margin-bottom: 20px;
+                }
+                
+                .social-icon {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #4a5568;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .social-icon img {
+                    width: 16px;
+                    height: 16px;
+                }
+                
+                @media only screen and (max-width: 480px) {
+                    .info-grid {
+                        grid-template-columns: 1fr;
+                    }
+                    
+                    .full-width {
+                        grid-column: span 1;
+                    }
+                    
+                    .patient-info {
+                        flex-direction: column;
+                        text-align: center;
+                    }
+                }
+            </style>
+        </head>
 
-            <div class="section">
-                <h3>Patient ID:</h3>
-                <p>${data.patient_id}</p>
+        <body>
+            <div class="email-container">
+                <div class="header">
+                    <div class="logo">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2906/2906274.png" width="32" height="32" alt="Logo">
+                        PatientPulse.tech
+                    </div>
+                    <h1>Your Visit Summary</h1>
+                    <p>Here's a summary of your recent visit to our clinic</p>
+                </div>
+                
+                <div class="content">
+                    <div class="patient-info">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="patient-avatar" alt="Patient">
+                        <div class="patient-details">
+                            <h3>Patient Name: ${data.patient_name}</h3>
+                            <p>Visit Date: ${data.visit_date}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3023/3023981.png" alt="Vitals">
+                            Vital Signs
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3480/3480608.png" class="info-icon" alt="Weight">
+                                <div class="info-content">
+                                    <div class="info-label">Weight</div>
+                                    <div class="info-value">${data.weight} kg</div>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3023/3023986.png" class="info-icon" alt="Blood Pressure">
+                                <div class="info-content">
+                                    <div class="info-label">Blood Pressure</div>
+                                    <div class="info-value">${data.blood_pressure}</div>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3039/3039373.png" class="info-icon" alt="Heart Rate">
+                                <div class="info-content">
+                                    <div class="info-label">Heart Rate</div>
+                                    <div class="info-value">${data.heart_rate} bpm</div>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3183/3183066.png" class="info-icon" alt="Temperature">
+                                <div class="info-content">
+                                    <div class="info-label">Temperature</div>
+                                    <div class="info-value">${data.temperature} °C</div>
+                                </div>
+                            </div>
+                            <div class="info-item full-width">
+                                <img src="https://cdn-icons-png.flaticon.com/512/2940/2940517.png" class="info-icon" alt="Blood Sugar">
+                                <div class="info-content">
+                                    <div class="info-label">Blood Sugar</div>
+                                    <div class="info-value">${data.blood_sugar} mg/dL</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">
+                            <img src="https://cdn-icons-png.flaticon.com/512/2785/2785482.png" alt="Diagnosis">
+                            Diagnosis
+                        </div>
+                        <div class="info-item full-width">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3022/3022831.png" class="info-icon" alt="Symptoms">
+                            <div class="info-content">
+                                <div class="info-label">Symptoms</div>
+                                <div class="info-value">${data.symptoms}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="diagnosis-card">
+                            <div class="card-title">
+                                <img src="https://cdn-icons-png.flaticon.com/512/3159/3159120.png" alt="Diagnosis">
+                                Diagnosis
+                            </div>
+                            <div>${data.diagnosis}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <div class="section-title">
+                            <img src="https://cdn-icons-png.flaticon.com/512/2064/2064696.png" alt="Treatment">
+                            Treatment Plan
+                        </div>
+                        
+                        <div class="medication-card">
+                            <div class="card-title">
+                                <img src="https://cdn-icons-png.flaticon.com/512/2736/2736992.png" alt="Medication">
+                                Medications Prescribed
+                            </div>
+                            <div>${data.medications_prescribed}</div>
+                        </div>
+                        
+                        <div class="treatment-card">
+                            <div class="card-title">
+                                <img src="https://cdn-icons-png.flaticon.com/512/2936/2936886.png" alt="Treatment">
+                                Treatment Instructions
+                            </div>
+                            <div>${data.treatment_plan}</div>
+                        </div>
+                        
+                        <div class="info-item full-width" style="margin-top: 15px;">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3176/3176272.png" class="info-icon" alt="Notes">
+                            <div class="info-content">
+                                <div class="info-label">Doctor's Notes</div>
+                                <div class="info-value">${data.notes}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="footer">
+                    <div class="footer-links">
+                        <a href="#">Privacy Policy</a>
+                        <a href="#">Terms of Service</a>
+                        <a href="#">Contact Us</a>
+                    </div>
+                    <p>© 2025 HealthCare+ Patient Management System. All rights reserved.</p>
+                </div>
             </div>
-            <div class="section">
-                <h3>Visit Date:</h3>
-                <p>${data.visit_date}</p>
-            </div>
-            <div class="section">
-                <h3>Weight:</h3>
-                <p>${data.weight} kg</p>
-            </div>
-            <div class="section">
-                <h3>Blood Pressure:</h3>
-                <p>${data.blood_pressure}</p>
-            </div>
-            <div class="section">
-                <h3>Heart Rate:</h3>
-                <p>${data.heart_rate} bpm</p>
-            </div>
-            <div class="section">
-                <h3>Temperature:</h3>
-                <p>${data.temperature} °C</p>
-            </div>
-            <div class="section">
-                <h3>Blood Sugar:</h3>
-                <p>${data.blood_sugar} mg/dL</p>
-            </div>
-            <div class="section">
-                <h3>Symptoms:</h3>
-                <p>${data.symptoms}</p>
-            </div>
-            <div class="section">
-                <h3>Diagnosis:</h3>
-                <p>${data.diagnosis}</p>
-            </div>
-            <div class="section">
-                <h3>Medications Prescribed:</h3>
-                <p>${data.medications_prescribed}</p>
-            </div>
-            <div class="section">
-                <h3>Treatment Plan:</h3>
-                <p>${data.treatment_plan}</p>
-            </div>
-            <div class="section">
-                <h3>Doctor's Notes:</h3>
-                <p>${data.notes}</p>
-            </div>
-
-            <div class="footer">
-                This is an automated email. Please do not reply. <br>
-                <a href="mailto:doctor@example.com">Contact the doctor</a> for further assistance.
-            </div>
-        </div>
-    </body>
-    </html>`;
+        </body>
+        </html>`;
 
     try {
         const response = await resend.emails.send({

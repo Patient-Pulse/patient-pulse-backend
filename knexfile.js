@@ -5,7 +5,7 @@ export default {
       host: '127.0.0.1',
       user: 'root',
       password: 'root@123',
-      database: 'pulspoint',
+      database: 'patientpulse',
       charset: 'utf8mb4',
     },
     pool: {

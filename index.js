@@ -6,11 +6,10 @@ import cors from "cors";
 import authRoutes from "./modules/auth/routes/admin.routes.js";
 import userRoutes from "./modules/user/routes/user.routes.js";
 import patientsRoutes from "./modules/patients/routes/patients.routes.js";
-import doctorsRoutes from './modules/doctors/routes/doctor.routes.js'
 
 dotenv.config();
 const app = express();
-connectDB();
+// connectDB();
 
 app.use(
   cors({
@@ -26,7 +25,6 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/patients", patientsRoutes);
-app.use("/api/doctors", doctorsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

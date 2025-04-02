@@ -1,18 +1,33 @@
-import jwt from "jsonwebtoken";
+import jwt from 'jsonwebtoken';
+import db from "../../../config/knex.js";
 
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
+const authMiddleware = async (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
 
-  if (!token) return res.status(401).json({ message: "Unauthorized" });
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;
-    // validate expiration
-    // validate userId/doctorId exists in our table
+    
+    const [user] = await db('users')
+      .where({ id: decoded.id, clinic_id: decoded.clinic_id })
+      .limit(1);
+
+    if (!user) {
+      console.log('this.error', err);
+      return res.status(401).json({ message: 'User account not found' });
+    }
+
+    req.user_id = decoded.id;
+    req.user_role = decoded.role;
+    req.clinic_id = decoded.clinic_id;
+
     next();
   } catch (err) {
-    res.status(401).json({ message: "Invalid Token" });
+    console.log('this.error', err);
+    res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 
