@@ -1,5 +1,5 @@
 import express from "express";
-import dotenv from "dotenv";
+// import dotenv from "dotenv";
 import cors from "cors";
 
 import authRoutes from "./modules/auth/routes/admin.routes.js";
@@ -7,7 +7,7 @@ import userRoutes from "./modules/user/routes/user.routes.js";
 import patientsRoutes from "./modules/patients/routes/patients.routes.js";
 import doctorsRoutes from './modules/doctors/routes/doctor.routes.js'
 
-dotenv.config();
+// dotenv.config();
 const app = express();
 
 console.log("✅ Allowed Origin:", process.env.WHITE_URL);
