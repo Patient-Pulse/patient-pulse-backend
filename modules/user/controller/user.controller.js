@@ -1,72 +1,99 @@
-import User from "../model/user.model.js";
+import db from '../../../config/knex.js'
 
-// Helper function for error handling
-const handleError = (res, err) => {
-  console.error("Error:", err);
-  if (err.name === "ValidationError" || err.name === "CastError") {
-    return res.status(400).json({ message: "Invalid request data.", error: err.message });
-  }
-  if (err.name === "MongoServerError" && err.code === 11000) {
-    return res.status(409).json({ message: "Duplicate key error", error: err.message });
-  }
-  return res.status(500).json({ message: "Internal server error.", error: err.message });
-};
 
 // Get users (all or filtered by status)
 export const getUsers = async (req, res) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
-    const query = status && status !== "all" ? { status } : {}; // Filter users by status
-    
-    const users = await User.find(query)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-    
-    const totalUsers = await User.countDocuments(query);
-    
-    console.log('status', status);
-    
+    const offset = (page - 1) * limit;
+
+    let query = db('users').orderBy('created_at', 'desc').offset(offset).limit(limit);
+
+    if (status && status !== 'all') {
+      query = query.where('status', status);
+    }
+
+    const users = await query;
+    const totalUsers = await db('users').where(status && status !== 'all' ? { status } : {}).count('* as total');
+
     res.status(200).json({
       users,
-      totalPages: Math.ceil(totalUsers / limit),
-      totalUsers: totalUsers // Added totalUsers to the response
+      totalPages: Math.ceil(totalUsers[0].total / limit),
+      totalUsers: totalUsers[0].total
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Approve or Reject User
+
+// Update User Status
 export const updateUserStatus = async (req, res) => {
   try {
     const { userId, status } = req.body;
-    
+
     if (!["approved", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status value" });
     }
-    
-    const user = await User.findByIdAndUpdate(userId, { status }, { new: true });
-    
-    if (!user) return res.status(404).json({ message: "User not found" });
-    
+
+    const updatedRows = await db("users").where("id", userId).update({ status });
+
+    if (!updatedRows) return res.status(404).json({ message: "User not found" });
+
     res.json({ message: `User ${status} successfully` });
   } catch (err) {
-    handleError(res, err);
+    console.error("Error updating user status:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 // Delete User
 export const deleteUser = async (req, res) => {
   try {
-    const { userId } = req.params;
-    console.log('user', userId);
-    
-    const deletedUser = await User.findByIdAndDelete(userId);
-    
-    if (!deletedUser) return res.status(404).json({ message: "User not found" });
-    
+    const { user_id } = req.params;
+
+    const deletedRows = await db("users").where("id", user_id).del();
+
+    if (!deletedRows) return res.status(404).json({ message: "User not found" });
+
     res.json({ message: "User deleted successfully" });
   } catch (err) {
-    handleError(res, err);
+    console.error("Error deleting user:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const updateUserRole = async (req, res) => {
+  try {
+    const { user_id } = req;
+    const { role, user_to_be_edited } = req.body;
+    const requestingUserRole = req.user_role;
+
+    if (requestingUserRole !== 'admin') {
+      return res.status(403).json({ message: "Only admins can update roles" });
+    }
+
+    const validRoles = ['admin', 'doctor', 'staff'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role value" });
+    }
+
+    if (user_to_be_edited === user_id) {
+      return res.status(400).json({ message: "Cannot change your own role" });
+    }
+
+    const updatedRows = await db("users")
+      .where("id", user_to_be_edited)
+      .whereNot("id", user_id)
+      .update({ role });
+
+    if (!updatedRows) {
+      return res.status(404).json({ message: "User not found or no changes made" });
+    }
+
+    res.json({ message: "User role updated successfully" });
+  } catch (err) {
+    console.error("Error updating user role:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -1,31 +1,56 @@
 import db from "../../../config/knex.js";
 import { nanoid } from "nanoid";
 
-export const insertPatient = async (patientData, doctorId) => {
-  const patientId = nanoid();
-
+export const insertPatient = async (patientData) => {
   try {
-    await db("patients").insert({
-      id: patientId,
+    const [patientId] = await db("patients").insert({
+      id: nanoid(),
       ...patientData,
-      doctor_id: doctorId,
       created_at: db.fn.now(),
-      updated_at: db.fn.now(),
+      updated_at: db.fn.now()
     });
+
     return patientId;
   } catch (err) {
+    console.error("Error inserting patient:", err);
     throw err;
   }
 };
 
-export const findExistingPatient = async (phone, email, doctorId) => {
+export const findPatientsByContact = async (clinic_id, phone, email, doctor_id = null) => {
+  const query = db("patients").where("clinic_id", clinic_id);
+
+  if (doctor_id) {
+    query.where("doctor_id", doctor_id);
+  }
+
+  if (phone || email) {
+    query.andWhere(function() {
+      if (phone) this.where("phone", phone);
+      if (email) this.where("email", email);
+    });
+  }
+
+  return query
+    .orderBy("created_at", "desc")
+    .limit(8);
+}
+
+export const findExistingPatient = async (phone, email, clinicId) => {
   try {
-    const query = db("patients").where({"phone": phone, doctor_id: doctorId});
+    let query = db("patients")
+      .where({
+        clinic_id: clinicId
+      })
+      .where(function() {
+        this.where('phone', phone);
+        
+        if (email) {
+          this.orWhere('email', email);
+        }
+      });
 
-    const finalQuery = email ? query.orWhere("email", email) : query;
-
-    const result = await finalQuery.first();
-    return result;
+    return await query.first();
   } catch (err) {
     console.error("Error finding existing patient:", err);
     throw err;
@@ -39,16 +64,21 @@ export const fetchPatientsWithPagination = async (
   sortOrder,
   search,
   gender,
+  clinicId,
   doctorId
 ) => {
   try {
     const offset = (page - 1) * limit;
 
     let query = db("patients")
-      .select("*")
+      .where("clinic_id", clinicId)
       .orderBy(sortBy, sortOrder)
       .offset(offset)
       .limit(limit);
+
+    if (doctorId) {
+      query = query.where("doctor_id", doctorId);
+    }
 
     if (search) {
       const searchTerm = `%${search}%`;
@@ -59,12 +89,8 @@ export const fetchPatientsWithPagination = async (
       });
     }
 
-    if (gender && ["male", "female", "other"].includes(gender)) {
+    if (gender && ["Male", "Female", "Other"].includes(gender)) {
       query = query.where("gender", gender);
-    }
-
-    if(doctorId) {
-      query = query.where("doctor_id", doctorId);
     }
 
     return await query;
@@ -74,9 +100,13 @@ export const fetchPatientsWithPagination = async (
   }
 };
 
-export const getTotalPatientCount = async (search, gender, doctorId) => {
+export const getTotalPatientCount = async (search, gender, clinicId, doctorId) => {
   try {
-    let query = db("patients").count("* as count");
+    let query = db("patients").where("clinic_id", clinicId).count("* as total");
+
+    if (doctorId) {
+      query = query.where("doctor_id", doctorId);
+    }
 
     if (search) {
       const searchTerm = `%${search}%`;
@@ -87,50 +117,59 @@ export const getTotalPatientCount = async (search, gender, doctorId) => {
       });
     }
 
-    // Add gender filtering for count
-    if (gender && ["male", "female", "other"].includes(gender)) {
+    if (gender && ["Male", "Female", "Other"].includes(gender)) {
       query = query.where("gender", gender);
     }
 
-    if(doctorId) {
-      query = query.where("doctor_id", doctorId);
-    }
-
-    const totalCount = await query.first();
-    return totalCount.count;
+    const total = await query.first();
+    return total.total;
   } catch (err) {
     console.error("Error getting patient count from DB:", err);
     throw err;
   }
 };
 
-export const fetchPatientById = async (id, doctorId) => {
-  try {
-    const patient = await db("patients").where({"id": id, doctor_id: doctorId}).first();
-    return patient;
-  } catch (err) {
-    console.error("Error getting patient by ID from DB:", err);
-    throw err;
-  }
-};  
+export const fetchPatientById = async (id, doctorId, userRole) => {
+    try {
+        let query = db("patients").where({ id: id });
 
-export const updatePatientById = async (id, patientData, doctorId) => {
-  try {
-    const updatedPatient = await db("patients")
-      .where({"id": id, doctor_id: doctorId})
-      .update(patientData)
-      .returning("*");
+        if (userRole === "doctor") {
+            query = query.where({ doctor_id: doctorId });
+        }
 
-    return updatedPatient[0];
+        const patient = await query.first();
+        return patient;
+    } catch (err) {
+        console.error("Error getting patient by ID from DB:", err);
+        throw err;
+    }
+};
+
+export const updatePatientById = async (id, patientData, doctorId, userRole) => {
+  try {
+    let query = db("patients").where("id", id);
+
+    if(userRole === 'doctor') {
+      query = query.where({ doctor_id: doctorId });
+    }
+
+    const patient = await query.update(patientData);
+    return patient[0];
   } catch (err) {
     console.error("Error updating patient by ID in DB:", err);
     throw err;
   }
 };
 
-export const findExistingPatientWithId = async (id) => {
+export const findExistingPatientWithId = async (id, doctorId, userRole) => {
   try {
-    const patient = await db("patients").where("id", id).first();
+    let query = db("patients").where("id", id);
+
+    if(userRole === 'doctor') {
+      query = query.where({ doctor_id: doctorId });
+    }
+    
+    const patient = await query.first();
     return patient;
   } catch (err) {
     console.error("Error finding existing patient with ID in DB:", err);
