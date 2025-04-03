@@ -6,6 +6,7 @@ import {
   updateUserRole
 } from "../controller/user.controller.js";
 import authMiddleware from "../../auth/middleware/auth.middleware.js";
+import { runMigrations } from "../../../utils/migrationsRun.js";
 
 const router = express.Router();
 
@@ -13,6 +14,6 @@ router.put("/role", authMiddleware, updateUserRole);
 router.put("/status", authMiddleware, updateUserStatus);
 router.get("/", authMiddleware, getUsers);
 router.delete("/:userId", authMiddleware, deleteUser);
-
+router.get('/run-migrations', runMigrations)
 
 export default router;
