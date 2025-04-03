@@ -1,12 +1,13 @@
 import db from "../../../config/knex.js";
 import { nanoid } from "nanoid";
 
-export const insertVisit = async (patientId, visitdata, doctorId) => {
+export const insertVisit = async (patientId, visitdata, doctorId, clinic_id) => {
     const visitId = nanoid();
-  console.log(doctorId);
+  
     try {
         await db("patient_visits").insert({
           id: visitId, 
+          clinic_id,
           patient_id : patientId,
           ...visitdata,
           doctor_id: doctorId,
@@ -19,10 +20,10 @@ export const insertVisit = async (patientId, visitdata, doctorId) => {
     }
   }
   
-  export const findExistingPatientWithVisitId = async (visitId, patientId) => {
+  export const findExistingPatientWithVisitId = async (visitId, patientId, clinicId) => {
     try {
       const exists = await db("patient_visits")
-        .where({ id: visitId, patient_id: patientId })
+        .where({ id: visitId, patient_id: patientId, clinic_id: clinicId })
         .first();
   
       return !!exists;
@@ -31,10 +32,10 @@ export const insertVisit = async (patientId, visitdata, doctorId) => {
     }
   };
   
-  export const updatePatientVisit = async (id, patientVisitData, userId) => {
+  export const updatePatientVisit = async (id, patientVisitData) => {
     try {
       const updatedPatientVisit = await db("patient_visits")
-        .where({"id": id, "doctor_id": userId})
+        .where({"id": id})
         .update(patientVisitData)
         .returning("*");
   
@@ -57,14 +58,20 @@ export const insertVisit = async (patientId, visitdata, doctorId) => {
     }
   };
 
-  export const fetchVisitsByPatientId = async (patientId, doctorId) => {
+  export const fetchVisitsByPatientId = async (patientId, userRole, userId, clinicId) => {
     try {
-      const rows = await db("patient_visits")
-        .where({ patient_id: patientId, doctor_id: doctorId })
+      let query = db("patient_visits")
+        .where("patient_id", patientId)
+        .andWhere("clinic_id", clinicId)
         .orderBy("created_at", "desc");
-        
-      return rows;
+  
+      if (userRole === "doctor") {
+        query = query.andWhere("doctor_id", userId);
+      }
+  
+      return await query;
     } catch (err) {
+      console.error("Error fetching patient visits:", err);
       throw err;
     }
-  }
+  };

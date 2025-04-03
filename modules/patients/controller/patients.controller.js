@@ -4,7 +4,7 @@ import {
 } from "../validator/patient.validator.js";
 
 import {
-  findExistingPatient,
+  findPatientsByContact,
   insertPatient,
   fetchPatientsWithPagination,
   getTotalPatientCount,
@@ -13,17 +13,14 @@ import {
   findExistingPatientWithId
 } from "../dbo/patients.dbo.js";
 
-import {
-  sendErrorResponse,
-  sendSuccessResponse,
-} from "../../../utils/respHandler.js";
 
-export const registerPatient = async (req, res) => {
-  const { userId } = req;
+export const registerPatient = async (req, res) => { 
+  const { clinic_id, user_id, user_role } = req;
 
   try {
     const { error, value } = patientSchema.validate(req.body, {
       abortEarly: false,
+      context: { userRole: user_role } // Pass context for Joi validation
     });
 
     if (error) {
@@ -34,32 +31,60 @@ export const registerPatient = async (req, res) => {
       });
     }
 
-    const existingPatient = await findExistingPatient(value.phone, value.email, userId);
-
-    if (existingPatient) {
+    let doctor_id = null;
+    if (user_role === 'doctor') {
+      doctor_id = user_id;
+    } else if (user_role != 'doctor' && value.doctor_id) {
+      doctor_id = value.doctor_id;
+    } else {
       return res.status(400).json({
         status: "error",
-        message: "Patient with this phone or email already exists.",
+        message: "Doctor ID is required when creating a patient as staff",
       });
     }
 
-    const patientId = await insertPatient(value, userId);
+    const matches = await findPatientsByContact(
+      clinic_id, 
+      value.phone, 
+      value.email, 
+      doctor_id
+    );
+
+    if (matches.length >= 8) {
+      return res.status(400).json({
+        code: "DUPLICATE_LIMIT_REACHED",
+        message: "Maximum 8 patients with same contact info allowed",
+        matches
+      });
+    }
+
+    const patientId = await insertPatient({ 
+      ...value,
+      clinic_id,
+      doctor_id
+    });
 
     return res.status(201).json({
       status: "success",
       message: "Patient registered successfully",
-      patient_id: patientId,
+      data: {
+        patient_id: patientId,
+        clinic_id,
+        doctor_id
+      }
     });
   } catch (err) {
+    console.error("Error in registerPatient:", err);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 };
 
-export const getPatients = async (req, res) => {
-  const { userId } = req;
+export const getPatients = async (req, res) => { 
+  const { clinic_id, user_id, user_role } = req;
 
   try {
     const page = parseInt(req.query.page) || 1;
@@ -76,9 +101,17 @@ export const getPatients = async (req, res) => {
       sortOrder,
       search,
       gender,
-      userId
+      clinic_id,
+      user_role === "doctor" ? user_id : null
     );
-    const totalCount = await getTotalPatientCount(search, gender, userId);
+    
+    const totalCount = await getTotalPatientCount(
+      search,
+      gender,
+      clinic_id,
+      user_role === "doctor" ? user_id : null
+    );
+    
     const totalPages = Math.ceil(totalCount / limit);
 
     return res.status(200).json({
@@ -103,10 +136,10 @@ export const getPatients = async (req, res) => {
 
 export const getPatientById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { userId } = req;
+    const { id: patient_id } = req.params;
+    const { user_id, user_role} = req;
 
-    const patient = await fetchPatientById(id, userId);
+    const patient = await fetchPatientById(patient_id, user_id, user_role);
 
     if (!patient) {
       return res.status(404).json({
@@ -131,8 +164,8 @@ export const getPatientById = async (req, res) => {
 
 export const updatePatient = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { body, userId } = req;
+    const { patient_id } = req.params;
+    const { body, user_id, user_role} = req;
 
     const { error, value } = updatePatientSchema.validate(body, {
       abortEarly: false,
@@ -146,16 +179,16 @@ export const updatePatient = async (req, res) => {
       });
     }
 
-    const existingPatient = await findExistingPatientWithId(id);
+    const existingPatient = await findExistingPatientWithId(patient_id, user_id, user_role);
 
     if (!existingPatient) {
       return res.status(400).json({
         status: "error",
-        message: "Patient with this id not found.",
+        message: "Patient with this patient_id not found.",
       });
     }
 
-    const updatedPatient = await updatePatientById(id, value, userId);
+    const updatedPatient = await updatePatientById(patient_id, value, user_id, user_role);
 
     return res.status(200).json({
       status: "success",
