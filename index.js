@@ -10,14 +10,25 @@ import doctorsRoutes from './modules/doctors/routes/doctor.routes.js'
 dotenv.config();
 const app = express();
 
+console.log("✅ Allowed Origin:", process.env.WHITE_URL);
+
+const allowedOrigins = [process.env.WHITE_URL, "https://www.patientpulse.tech"];
+
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: "GET,POST,PUT,DELETE,PATCH",
     allowedHeaders: "Content-Type,Authorization",
   })
 );
+
 
 app.use(express.json());
 
