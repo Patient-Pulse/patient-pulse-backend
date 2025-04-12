@@ -14,16 +14,7 @@ export const getClinicDoctors = async (req, res) => {
 
     return res.json({
       status: "success",
-      data: [
-        {
-            id: "Qa36QzStL_4Wv5xAxjzgs",
-            full_name: "Mahesh Morem"            
-        },
-        {
-            id: "fpx8yUxO3SjrNTBvACRd0",
-            full_name: "Polas Gnanesh"            
-        }
-      ],
+      data: doctors
     });
   } catch (err) {
     console.log(err)

@@ -1,4 +1,4 @@
-import { registerClinicSchema, registerUserSchema, loginSchema } from "../validations/auth.validation.js";
+import { registerClinicSchema, loginSchema } from "../validations/auth.validation.js";
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import db from "../../../config/knex.js";
@@ -21,7 +21,7 @@ export const registerClinic = async (req, res) => {
     const { value, error } = registerClinicSchema.validate(req.body, { stripUnknown: true });
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { clinic_name, clinic_email, clinic_phone, clinic_address, admin_name, admin_email, admin_password } = value;
+    const { clinic_name, clinic_email, clinic_phone, clinic_address, admin_name, admin_email, admin_password, phone_number } = value;
 
     const [existingClinic] = await db('clinics').where('email', clinic_email).limit(1);
     if (existingClinic) return res.status(400).json({ message: 'Clinic with this email already exists' });
@@ -48,7 +48,8 @@ export const registerClinic = async (req, res) => {
         email: admin_email,
         password: hashedPassword,
         role: 'admin',
-        status: 'approved'
+        status: 'pending',
+        phone_number
       });
 
       res.status(201).json({
@@ -56,34 +57,6 @@ export const registerClinic = async (req, res) => {
         clinic_id 
       });
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-export const registerUser = async (req, res) => {
-  try {
-    const { value, error } = registerUserSchema.validate(req.body, { stripUnknown: true });
-    if (error) return res.status(400).json({ message: error.details[0].message });
-
-    const { name, email, password, clinic_id } = value;
-
-    const [existingUser] = await db('users').where({ email, clinic_id }).limit(1);
-    if (existingUser) return res.status(400).json({ message: 'User already exists in this clinic' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await db('users').insert({
-      id: nanoid(),
-      clinic_id,
-      name,
-      email,
-      password: hashedPassword,
-      role: 'staff',
-      status: 'pending'
-    });
-
-    res.status(201).json({ message: 'Registration submitted for approval.' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -112,7 +85,7 @@ export const login = async (req, res) => {
       }
 
       if (user.status !== 'approved') {
-        return res.status(403).json({ message: 'Account pending approval' });
+        return res.status(403).json({ message: 'Account approval pending' });
       }
 
       const token = generateToken(user);
@@ -150,7 +123,7 @@ export const login = async (req, res) => {
     }
 
     if (user.status !== 'approved') {
-      return res.status(403).json({ message: 'Account pending approval' });
+      return res.status(403).json({ message: 'Account approval pending' });
     }
 
     const token = generateToken(user);
