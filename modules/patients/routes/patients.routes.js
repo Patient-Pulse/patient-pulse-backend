@@ -24,7 +24,7 @@ router.get("/:id", authMiddleware, getPatientById);
 router.post("/register-patient", authMiddleware, registerPatient);
 router.put("/update-patient/:patient_id", authMiddleware, updatePatient);
 
-router.post("/:patientId/add-visit/", authMiddleware, addVisit);
+router.post("/:patientId/visits/", authMiddleware, addVisit);
 router.patch("/:patientId/edit-visit/:visitId", authMiddleware, editVisit)
 router.get("/:patientId/visit/:visitId", authMiddleware, getVisitById)
 router.get("/:patientId/visits", authMiddleware, getPatientVisits);

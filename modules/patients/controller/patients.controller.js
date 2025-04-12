@@ -137,7 +137,7 @@ export const getPatients = async (req, res) => {
 export const getPatientById = async (req, res) => {
   try {
     const { id: patient_id } = req.params;
-    const { user_id, user_role} = req;
+    const { user_id, user_role, clinic_id} = req;
 
     const patient = await fetchPatientById(patient_id, user_id, user_role);
 

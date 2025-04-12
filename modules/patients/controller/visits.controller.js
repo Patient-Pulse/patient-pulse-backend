@@ -4,11 +4,8 @@ import {
 } from "../validator/patient.validator.js";
 
 import {
-  insertVisit,
-  findExistingPatientWithVisitId,
-  updatePatientVisit,
   fetchVisitById,
-  fetchVisitsByPatientId
+  fetchVisitsByPatientId,
 } from "../dbo/visits.dbo.js";
 
 import {
@@ -20,6 +17,10 @@ import { fetchPatients } from "../dbo/patients.dbo.js";
 
 import { resendEmailProvider } from '../../../utils/resendEmailProvider.emailer.js';
 
+import db from "../../../config/knex.js";
+import { nanoid } from "nanoid";
+
+// controllers/visits.controller.js
 export const addVisit = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -52,61 +53,116 @@ export const addVisit = async (req, res) => {
       });
     }
 
-    const visitId = await insertVisit(patientId, value, doctor_id, clinic_id);
+    // Extract medications from the request
+    const { medications, ...visitData } = value;
+
+    const visitId = nanoid();
+
+    // Create visit and prescriptions in a transaction
+    await db.transaction(async trx => {
+      // 1. Insert the visit without medications_prescribed field
+      await trx("patient_visits")
+      .insert({
+        id: visitId,
+        clinic_id,
+        patient_id: patientId,
+        ...visitData,
+        doctor_id,
+        created_at: db.fn.now(),
+        updated_at: db.fn.now(),
+      });
+
+      // 2. Insert medications if they exist
+      if (medications && medications.length > 0) {
+        await trx("prescribed_medicines")
+          .insert(medications.map(med => ({
+            id: nanoid(),
+            visit_id: visitId,
+            clinic_medicine_id: med.clinic_medicine_id,
+            global_medicine_id: med.global_medicine_id,
+            medicine_name: med.medicine_name,
+            dosage: med.dosage,
+            formulation: med.formulation,
+            quantity: med.quantity,
+            frequency: med.frequency,
+            after_meal: med.after_meal,
+            instructions: med.instructions,
+            is_custom: med.is_custom || false,
+            created_at: db.fn.now()
+          })));
+      }
+    });
 
     return sendSuccessResponse(res, 201, "Visit added successfully", {
       visit_id: visitId,
     });
   } catch (err) {
-    console.log(err)
+    console.error("Error in addVisit:", err);
     return sendErrorResponse(res, err, process.env.NODE_ENV);
   }
 };
 
 export const editVisit = async (req, res) => {
   try {
-    const { visitId, patientId } = req.params;
-    const { body, clinic_id } = req;
-
-    const { error, value: validatedValue } = updateVisitSchema.validate(body, {
+    const { patientId, visitId } = req.params;
+    const { body } = req;
+    
+    const { error, value } = updateVisitSchema.validate(body, {
       abortEarly: false,
-      allowUnknown: true,
       stripUnknown: true,
     });
 
     if (error) {
-      return sendErrorResponse( res, {
+      return sendErrorResponse(
+        res,
+        {
           code: "VALIDATION_ERROR",
           message: error.details.map((err) => err.message).join(", "),
-        }, process.env.NODE_ENV
+        },
+        process.env.NODE_ENV
       );
     }
 
-    const existingPatient = await findExistingPatientWithVisitId(
-      visitId,
-      patientId,
-      clinic_id
-    );
+    const { medications, ...visitData } = value;
 
-    if (!existingPatient) {
-      return sendErrorResponse(res, {
-        code: "NOT_FOUND",
-        message: "Patient with visit ID not found.",
-      });
-    }
+    await db.transaction(async trx => {
+      // 1. Update the visit data
+      await trx("patient_visits")
+        .where({ id: visitId, patient_id: patientId })
+        .update({
+          ...visitData,
+          updated_at: db.fn.now()
+        });
 
-    const updatedPatientVisit = await updatePatientVisit(
-      visitId,
-      validatedValue
-    );
+      // 2. Delete existing medications for this visit
+      await trx("prescribed_medicines")
+        .where("visit_id", visitId)
+        .del();
 
-    return sendSuccessResponse(
-      res,
-      200,
-      "Visit updated successfully",
-      updatedPatientVisit
-    );
+      // 3. Insert new medications
+      if (medications && medications.length > 0) {
+        await trx("prescribed_medicines")
+          .insert(medications.map(med => ({
+            id: nanoid(),
+            visit_id: visitId,
+            clinic_medicine_id: med.clinic_medicine_id,
+            global_medicine_id: med.global_medicine_id,
+            medicine_name: med.medicine_name,
+            dosage: med.dosage,
+            formulation: med.formulation,
+            quantity: med.quantity,
+            frequency: med.frequency,
+            after_meal: med.after_meal,
+            instructions: med.instructions,
+            is_custom: med.is_custom || false,
+            created_at: db.fn.now()
+          })));
+      }
+    });
+
+    return sendSuccessResponse(res, 200, "Visit updated successfully");
   } catch (err) {
+    console.error("Error in editVisit:", err);
     return sendErrorResponse(res, err, process.env.NODE_ENV);
   }
 };

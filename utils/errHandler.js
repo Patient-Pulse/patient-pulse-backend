@@ -1,4 +1,6 @@
 const mapDbError = (err) => {
+    console.log(err);
+    console.log('error')
     const errorMap = {
         ER_DUP_ENTRY: { status: 409, message: "Duplicate entry found. Use a unique value." },
         ER_BAD_FIELD_ERROR: { status: 400, message: "Invalid field in query. Check your input." },
@@ -12,6 +14,8 @@ const mapDbError = (err) => {
         ER_DATA_TOO_LONG: { status: 400, message: "Data too long for column." },
         ER_ROW_IS_REFERENCED_2: { status: 409, message: "Cannot delete or update: Foreign key constraint fails." },
         ER_NO_REFERENCED_ROW_2: { status: 400, message: "Foreign key constraint fails: Invalid reference." },
+        VALIDATION_ERROR: { status: 422, message: err.message ? err.message : "Validation error. Check your input." },
+
     };
 
     return errorMap[err.code] || { status: 500, message: "An internal server error occurred." };
