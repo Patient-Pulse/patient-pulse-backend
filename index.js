@@ -5,6 +5,9 @@ import cors from "cors";
 import authRoutes from "./modules/auth/routes/admin.routes.js";
 import userRoutes from "./modules/user/routes/user.routes.js";
 import patientsRoutes from "./modules/patients/routes/patients.routes.js";
+import medicinesRoutes from "./modules/medicines/routes/medicines.routes.js";
+import prescriptionsRoutes from "./modules/medicines/routes/prescription.router.js";
+import analyticsRoutes from "./modules/analytics/routes/analytics.routes.js";
 
 // dotenv.config();
 const app = express();
@@ -34,6 +37,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/patients", patientsRoutes);
+app.use("/api/medicines", medicinesRoutes);
+app.use("/api/prescriptions", prescriptionsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

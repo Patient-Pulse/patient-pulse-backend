@@ -49,10 +49,24 @@ export const addVisitSchema = Joi.object({
   blood_sugar: Joi.string().optional().allow(null, ''),
   symptoms: Joi.string().optional().allow(null, ''),
   diagnosis: Joi.string().optional().allow(null, ''),
-  medications_prescribed: Joi.string().optional().allow(null, ''),
   treatment_plan: Joi.string().optional().allow(null, ''),
   notes: Joi.string().optional().allow(null, ''),
-  doctor_id: Joi.string().optional().allow(null, '')
+  doctor_id: Joi.string().optional().allow(null, ''),
+  amount: Joi.number().positive().required(),
+  medications: Joi.array().items(
+    Joi.object({
+      clinic_medicine_id: Joi.string().allow(null),
+      global_medicine_id: Joi.string().allow(null),
+      medicine_name: Joi.string().required(),
+      dosage: Joi.string().required(),
+      formulation: Joi.string().required(),
+      quantity: Joi.number().required(),
+      frequency: Joi.string().required(),
+      after_meal: Joi.boolean().allow(null),
+      instructions: Joi.string().allow(null, ''),
+      is_custom: Joi.boolean().default(false)
+    })
+  ).optional().default([]),
 }).or('notes', 'symptoms');
 
 export const updateVisitSchema = Joi.object({
@@ -68,5 +82,23 @@ export const updateVisitSchema = Joi.object({
   medications_prescribed: Joi.string().optional().allow(null, ''),
   treatment_plan: Joi.string().optional().allow(null, ''),
   notes: Joi.string().optional().allow(null, ''),
-  doctor_id: Joi.string().optional().allow(null, '')
+  doctor_id: Joi.string().optional().allow(null, ''),
+  amount: Joi.number().positive().optional(),
+  medications: Joi.array().items(
+    Joi.object({
+      clinic_medicine_id: Joi.string().allow(null),
+      global_medicine_id: Joi.string().allow(null),
+      medicine_name: Joi.string().required(),
+      dosage: Joi.string().required(),
+      formulation: Joi.string().valid(
+        'Tablet', 'Capsule', 'Syrup', 'Injection', 
+        'Cream', 'Ointment', 'Drops', 'Suspension', 'Other'
+      ).required(),
+      quantity: Joi.number().integer().positive().required(),
+      frequency: Joi.string().required(),
+      after_meal: Joi.boolean().allow(null),
+      instructions: Joi.string().allow(null, '')
+      // is_custom: Joi.boolean().default(false)
+    })
+  ).optional()
 }).or('notes', 'symptoms');
