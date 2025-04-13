@@ -20,7 +20,7 @@ export const registerPatient = async (req, res) => {
   try {
     const { error, value } = patientSchema.validate(req.body, {
       abortEarly: false,
-      context: { userRole: user_role } // Pass context for Joi validation
+      context: { userRole: user_role }
     });
 
     if (error) {
@@ -46,14 +46,15 @@ export const registerPatient = async (req, res) => {
     const matches = await findPatientsByContact(
       clinic_id, 
       value.phone, 
-      value.email, 
+      value.email,
+      value.full_name,
       doctor_id
     );
 
-    if (matches.length >= 8) {
+    if (matches.length > 0) {
       return res.status(400).json({
-        code: "DUPLICATE_LIMIT_REACHED",
-        message: "Maximum 8 patients with same contact info allowed",
+        code: "POTENTIAL_DUPLICATE",
+        message: "A patient with this name and contact information may already exist",
         matches
       });
     }

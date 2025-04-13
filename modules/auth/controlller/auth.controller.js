@@ -21,7 +21,7 @@ export const registerClinic = async (req, res) => {
     const { value, error } = registerClinicSchema.validate(req.body, { stripUnknown: true });
     if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { clinic_name, clinic_email, clinic_phone, clinic_address, admin_name, admin_email, admin_password, phone_number } = value;
+    const { clinic_name, clinic_email, clinic_phone, clinic_address, admin_name, admin_email, admin_password, phone } = value;
 
     const [existingClinic] = await db('clinics').where('email', clinic_email).limit(1);
     if (existingClinic) return res.status(400).json({ message: 'Clinic with this email already exists' });
@@ -49,7 +49,7 @@ export const registerClinic = async (req, res) => {
         password: hashedPassword,
         role: 'admin',
         status: 'pending',
-        phone_number
+        phone
       });
 
       res.status(201).json({

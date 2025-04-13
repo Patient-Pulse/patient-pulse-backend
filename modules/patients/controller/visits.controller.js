@@ -222,18 +222,19 @@ export const sendEmail = async (req, res) => {
         const patientOptions = {
             conditions: {
                 id: patientId,
-            },
-            select: ["email"]
+            }
         };
 
-        const patient = await fetchPatients(patientOptions);
-      
+        let patient = await fetchPatients(patientOptions);
+              
         if (!patient || patient.length === 0) {
             return res.status(404).json({
                 status: "error",
                 message: "Patient not found",
             });
         }
+
+        patient = patient[0];
 
         const visit = await fetchVisitById(visitId, patientId);
         if (!visit) {
@@ -242,7 +243,8 @@ export const sendEmail = async (req, res) => {
 
         const options = {
             from: 'team@patientpulse.tech',
-            to: patient[0].email,
+            to: patient.email,
+            patient: patient,
             ...visit  
         }
 
