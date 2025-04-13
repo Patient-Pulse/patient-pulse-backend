@@ -8,7 +8,7 @@ export const registerClinicSchema = Joi.object({
   admin_name: Joi.string().min(3).max(100).required(),
   admin_email: Joi.string().email().required(),
   admin_password: Joi.string().min(6).max(100).required(),
-  phone_number: Joi.string().pattern(/^[0-9]+$/).min(7).max(15).required()
+  phone: Joi.string().pattern(/^[0-9]+$/).min(7).max(15).required()
 });
 
 export const loginSchema = Joi.object({

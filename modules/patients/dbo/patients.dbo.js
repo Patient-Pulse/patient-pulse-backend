@@ -17,14 +17,29 @@ export const insertPatient = async (patientData) => {
   }
 };
 
-export const findPatientsByContact = async (clinic_id, phone, email, doctor_id = null) => {
+export const findPatientsByContact = async (clinic_id, phone, email, full_name, doctor_id = null) => {
   const query = db("patients").where("clinic_id", clinic_id);
 
   if (doctor_id) {
     query.where("doctor_id", doctor_id);
   }
 
-  if (phone || email) {
+  if ((phone && full_name) || (email && full_name)) {
+    query.andWhere(function() {
+      if (phone) {
+        this.where(function() {
+          this.where("phone", phone)
+              .andWhere("full_name", full_name);
+        });
+      }
+      if (email) {
+        this.orWhere(function() {
+          this.where("email", email)
+              .andWhere("full_name", full_name);
+        });
+      }
+    });
+  } else if (phone || email) {
     query.andWhere(function() {
       if (phone) this.where("phone", phone);
       if (email) this.where("email", email);
