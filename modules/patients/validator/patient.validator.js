@@ -40,7 +40,6 @@ export const updatePatientSchema = Joi.object({
 
 
 export const addVisitSchema = Joi.object({
-  visit_date: Joi.date().iso().required(),
   weight: Joi.string().optional().allow(null, ''),
   blood_pressure: Joi.string().optional().allow(null, ''),
   heart_rate: Joi.string().optional().allow(null, ''),
@@ -70,7 +69,6 @@ export const addVisitSchema = Joi.object({
 }).or('notes', 'symptoms');
 
 export const updateVisitSchema = Joi.object({
-  visit_date: Joi.date().iso().required(),
   weight: Joi.string().optional().allow(null, ''),
   blood_pressure: Joi.string().optional().allow(null, ''),
   heart_rate: Joi.string().optional().allow(null, ''),

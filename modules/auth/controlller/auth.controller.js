@@ -60,6 +60,8 @@ export const registerClinic = async (req, res) => {
       const trialExpiryDate = new Date();
       trialExpiryDate.setDate(trialExpiryDate.getDate() + 30);
 
+      const formattedDate = trialExpiryDate.toISOString().slice(0, 19).replace("T", " ");
+
       await trx("clinics").insert({
         id: clinic_id,
         name: clinic_name,
@@ -67,7 +69,7 @@ export const registerClinic = async (req, res) => {
         phone: clinic_phone,
         address: clinic_address,
         subscription_status: "trial",
-        subscription_end_date: trialExpiryDate.toISOString(),
+        subscription_end_date: formattedDate,
       });
 
       const hashedPassword = await bcrypt.hash(admin_password, 10);
@@ -79,7 +81,7 @@ export const registerClinic = async (req, res) => {
         email: admin_email,
         password: hashedPassword,
         role: "admin",
-        status: "pending",
+        status: "approved",
         phone,
       });
 
@@ -119,7 +121,7 @@ export const login = async (req, res) => {
       }
 
       if (user.status !== "approved") {
-        return res.status(403).json({ message: "Account approval pending" });
+        return res.status(403).json({ message: "Account approval pending, please contact team@patientpulse.tech" });
       }
 
       const [clinic] = await db("clinics")
@@ -187,7 +189,7 @@ export const login = async (req, res) => {
     }
 
     if (user.status !== "approved") {
-      return res.status(403).json({ message: "Account approval pending" });
+      return res.status(403).json({ message: "Account approval pending, please contact team@patientpulse.tech" });
     }
 
     // Get clinic subscription details
