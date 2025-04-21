@@ -252,6 +252,6 @@ export const sendEmail = async (req, res) => {
         return sendSuccessResponse(res, 200, "Email sent successfully", resp);
     } catch(err) {
         console.log(err)
-        return sendErrorResponse(res, 500, err.message, process.env.NODE_ENV === "development" ? err.message : undefined);
+        return sendErrorResponse(res, 500, 'Unable to send the email, please contact email at team@patientpulse.tech', process.env.NODE_ENV === "development" ? err.message : undefined);
     }
 }
