@@ -123,13 +123,18 @@ export const resendEmailProvider = async (visit) => {
 
   try {
     const response = await resend.emails.send({
-      from: data.from,
-      to: data.to,
+      from: visit.from,
+      to: visit.to,
       subject: "Patient Visit Report",
       html: emailTemplate,
     });
 
+    if(response.error != null) {
+        throw new Error(response.error);
+    }
+
     console.log("Email sent successfully:", response);
+    return { status: "success", message: "Email sent successfully", response };
   } catch (error) {
     console.error("Error sending email:", error);
   }
